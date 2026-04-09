@@ -20,11 +20,13 @@ function getClient() {
   return client;
 }
 
+const DEFAULT_MODEL = "google/gemma-3-12b-it:free";
+
 async function chat(messages, options = {}) {
   const c = getClient();
-  if (!c) throw new Error("No API key found. Set OPENROUTER_API_KEY in your environment.");
+  if (!c) throw new Error("No API key found. Set OPENROUTER_API_KEY in your .env file.");
   const response = await c.chat.completions.create({
-    model: options.model || "openai/gpt-4o",
+    model: options.model || DEFAULT_MODEL,
     messages,
     temperature: options.temperature ?? 0.7,
   });
@@ -33,9 +35,9 @@ async function chat(messages, options = {}) {
 
 async function streamChat(messages, onChunk, options = {}) {
   const c = getClient();
-  if (!c) throw new Error("No API key found. Set OPENROUTER_API_KEY in your environment.");
+  if (!c) throw new Error("No API key found. Set OPENROUTER_API_KEY in your .env file.");
   const stream = await c.chat.completions.create({
-    model: options.model || "openai/gpt-4o",
+    model: options.model || DEFAULT_MODEL,
     messages,
     stream: true,
     temperature: options.temperature ?? 0.7,
