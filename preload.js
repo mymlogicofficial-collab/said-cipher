@@ -21,7 +21,13 @@ contextBridge.exposeInMainWorld("api", {
       delete merged.headers["Content-Type"];
     }
     const res = await fetch(url, merged);
-    return res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error("[API] Non-JSON response from " + endpoint + ":", text.slice(0, 300));
+      throw new Error("Server returned non-JSON: " + text.slice(0, 200));
+    }
   },
   async fetchRaw(endpoint, options = {}) {
     return fetch("http://127.0.0.1:9471" + endpoint, options);
