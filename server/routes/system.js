@@ -56,3 +56,5 @@ router.get("/protected", (req, res) => {
     ],
   });
 });
+
+module.exports = router;
