@@ -25,13 +25,23 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Always ensure dependencies are installed and complete
-echo  Checking dependencies...
-call npm install
-if errorlevel 1 (
-    echo  [!] npm install failed. Check your internet connection.
-    pause
-    exit /b 1
+:: Wipe bad node_modules if express is missing (catches broken installs)
+if exist node_modules (
+    if not exist node_modules\express (
+        echo  [!] Incomplete install detected. Cleaning node_modules...
+        rmdir /s /q node_modules
+    )
+)
+
+:: Install deps
+if not exist node_modules (
+    echo  Installing dependencies...
+    call npm install --ignore-scripts
+    if errorlevel 1 (
+        echo  [!] npm install failed.
+        pause
+        exit /b 1
+    )
 )
 
 echo.
