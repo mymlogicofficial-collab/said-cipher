@@ -3,7 +3,6 @@ try { require("fs").readFileSync(require("path").join(__dirname, ".env"), "utf8"
 
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const pty = require("node-pty");
 const os = require("os");
 const { createServer } = require("./server");
 
@@ -12,9 +11,20 @@ app.commandLine.appendSwitch("disable-gpu");
 app.commandLine.appendSwitch("disable-software-rasterizer");
 
 let mainWindow;
-let ptyProcess;
+let ptyProcess = null;
 let metricsInterval;
 let server;
+let ptyAvailable = false;
+let pty = null;
+
+// Try to load node-pty — if it fails, terminal degrades gracefully
+try {
+  pty = require("node-pty");
+  ptyAvailable = true;
+  console.log("[PTY] node-pty loaded successfully");
+} catch (e) {
+  console.warn("[PTY] node-pty not available — terminal panel will be disabled:", e.message);
+}
 
 const API_PORT = 9471;
 
@@ -98,31 +108,43 @@ function createWindow() {
 }
 
 function spawnTerminal() {
-  const shell = process.env.SHELL || "/bin/bash";
+  if (!ptyAvailable || !pty) {
+    console.warn("[PTY] Skipping terminal spawn — node-pty not available");
+    return;
+  }
 
-  ptyProcess = pty.spawn(shell, [], {
-    name: "xterm-256color",
-    cols: 80,
-    rows: 24,
-    cwd: process.env.HOME || os.homedir(),
-    env: process.env,
-  });
+  try {
+    const shell = process.env.COMSPEC || process.env.SHELL || (process.platform === "win32" ? "cmd.exe" : "/bin/bash");
 
-  ptyProcess.onData((data) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("terminal-output", data);
-    }
-  });
+    ptyProcess = pty.spawn(shell, [], {
+      name: "xterm-256color",
+      cols: 80,
+      rows: 24,
+      cwd: process.env.USERPROFILE || process.env.HOME || os.homedir(),
+      env: process.env,
+    });
 
-  ptyProcess.onExit(({ exitCode }) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(
-        "terminal-output",
-        "\r\nProcess exited with code " + exitCode + "\r\n"
-      );
-    }
+    ptyProcess.onData((data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("terminal-output", data);
+      }
+    });
+
+    ptyProcess.onExit(({ exitCode }) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(
+          "terminal-output",
+          "\r\nProcess exited with code " + exitCode + "\r\n"
+        );
+      }
+      ptyProcess = null;
+    });
+
+    console.log("[PTY] Terminal spawned:", shell);
+  } catch (e) {
+    console.error("[PTY] Failed to spawn terminal:", e.message);
     ptyProcess = null;
-  });
+  }
 }
 
 ipcMain.on("terminal-input", (_event, data) => {
@@ -132,6 +154,9 @@ ipcMain.on("terminal-input", (_event, data) => {
 ipcMain.on("terminal-resize", (_event, { cols, rows }) => {
   if (ptyProcess) ptyProcess.resize(cols, rows);
 });
+
+// Tell renderer whether terminal is available
+ipcMain.handle("terminal-available", () => ptyAvailable && ptyProcess !== null);
 
 app.whenReady().then(async () => {
   try {
