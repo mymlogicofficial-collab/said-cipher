@@ -1,7 +1,7 @@
 {
   "name": "said-cipher",
   "version": "1.0.0",
-  "description": "S.A.I.D. Cipher — MYM Logic LLC",
+  "description": "S.A.I.D. Cipher \u2014 MYM Logic LLC",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -14,8 +14,18 @@
     "productName": "S.A.I.D. Cipher",
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.ico"
     },
@@ -23,7 +33,10 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     },
-    "files": ["**/*", "!node_modules/.cache"]
+    "files": [
+      "**/*",
+      "!node_modules/.cache"
+    ]
   },
   "dependencies": {
     "ace-builds": "^1.32.0",
@@ -37,7 +50,8 @@
     "uuid": "^9.0.0",
     "ws": "^8.16.0",
     "xterm": "^5.3.0",
-    "xterm-addon-fit": "^0.8.0"
+    "xterm-addon-fit": "^0.8.0",
+    "form-data": "^4.0.0"
   },
   "devDependencies": {
     "electron": "^29.0.0",
