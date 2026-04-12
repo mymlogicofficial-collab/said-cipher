@@ -29,7 +29,11 @@ if errorlevel 1 (
 if exist node_modules (
     if not exist node_modules\express (
         echo  [!] Incomplete install detected. Cleaning node_modules...
-        rmdir /s /q node_modules
+        if exist node_modules\* (
+            for /d %%i in (node_modules\*) do rd /s /q "%%i" 2>nul
+            del /q node_modules\* 2>nul
+            rd /s /q node_modules 2>nul
+        )
     )
 )
 
