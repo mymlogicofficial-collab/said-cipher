@@ -25,24 +25,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Wipe bad node_modules if express is missing (catches broken installs)
-if exist node_modules (
-    if not exist node_modules\express (
-        echo  [!] Incomplete install detected. Cleaning node_modules...
-        if exist node_modules\* (
-            for /d %%i in (node_modules\*) do rd /s /q "%%i" 2>nul
-            del /q node_modules\* 2>nul
-            rd /s /q node_modules 2>nul
-        )
-    )
-)
-
-:: Install deps
+:: Install deps if needed
 if not exist node_modules (
     echo  Installing dependencies...
-    call npm install --ignore-scripts
+    call npm install
     if errorlevel 1 (
-        echo  [!] npm install failed.
+        echo  [!] npm install failed. Make sure you are on Node 18 or 20.
+        echo  [!] Run: nvm use 18
         pause
         exit /b 1
     )
