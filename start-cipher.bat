@@ -25,29 +25,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Check for Visual Studio Build Tools (required for native modules)
-where cl >nul 2>&1
+:: Always ensure dependencies are installed and complete
+echo  Checking dependencies...
+call npm install
 if errorlevel 1 (
-    echo  [!] WARNING: Visual Studio Build Tools not detected.
-    echo  [!] If Cipher fails to start, install from:
-    echo  [!] https://visualstudio.microsoft.com/visual-cpp-build-tools/
-    echo  [!] Select "Desktop development with C++" during install.
-    echo.
-)
-
-:: Install deps if needed
-if not exist node_modules (
-    echo  Installing dependencies...
-    call npm install
-    echo.
-    echo  Rebuilding native modules for Electron...
-    call npx electron-rebuild -f -w node-pty,better-sqlite3
-) else (
-    :: Check if native rebuild is needed
-    if not exist node_modules\node-pty\build\Release\pty.node (
-        echo  Rebuilding native modules for Electron...
-        call npx electron-rebuild -f -w node-pty,better-sqlite3
-    )
+    echo  [!] npm install failed. Check your internet connection.
+    pause
+    exit /b 1
 )
 
 echo.
