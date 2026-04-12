@@ -163,6 +163,10 @@ app.whenReady().then(async () => {
     server = await createServer(API_PORT);
   } catch (e) {
     console.error("[SERVER] Failed to start:", e.message);
+    console.error("[SERVER] Full error:", e.stack);
+    // Show error in a dialog so it's visible even without dev tools open
+    const { dialog } = require("electron");
+    dialog.showErrorBox("Cipher Server Failed", "Server could not start:\n\n" + e.message + "\n\n" + e.stack);
   }
   createWindow();
   spawnTerminal();
