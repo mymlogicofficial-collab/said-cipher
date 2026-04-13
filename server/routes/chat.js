@@ -111,4 +111,52 @@ router.post("/conversations/:id/message", async (req, res) => {
   }
 });
 
+
+// ── Voice upload + transcription ──────────────────────────────────────────────
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const FormDataNode = require("form-data");
+
+const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+router.post("/upload/audio", audioUpload.single("audio"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No audio file received" });
+
+  try {
+    const key = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+    if (!key) return res.json({ transcription: null, error: "No API key" });
+
+    const ext = (req.file.mimetype || "audio/webm").replace("audio/", "") || "webm";
+    const tmpFile = path.join(os.tmpdir(), "cipher-voice-" + Date.now() + "." + ext);
+    fs.writeFileSync(tmpFile, req.file.buffer);
+
+    const form = new FormDataNode();
+    form.append("file", fs.createReadStream(tmpFile), { filename: "audio." + ext, contentType: req.file.mimetype });
+    form.append("model", "openai/whisper-large-v3");
+
+    const response = await fetch("https://openrouter.ai/api/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + key, ...form.getHeaders() },
+      body: form,
+    });
+
+    fs.unlinkSync(tmpFile);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("[Voice] Transcription API error:", errText.slice(0, 200));
+      return res.json({ transcription: null, error: "Transcription failed" });
+    }
+
+    const result = await response.json();
+    res.json({ transcription: result.text || result.transcript || "" });
+
+  } catch (e) {
+    console.error("[Voice] Upload error:", e.message);
+    res.json({ transcription: null, error: e.message });
+  }
+});
+
 module.exports = router;
