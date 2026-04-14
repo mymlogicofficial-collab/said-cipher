@@ -1,5 +1,7 @@
 const express = require("express");
 const os = require("os");
+const fs = require("fs");
+const path = require("path");
 const router = express.Router();
 const cradle = require("../services/ai-cradle");
 
@@ -60,8 +62,6 @@ router.get("/protected", (req, res) => {
 module.exports = router;
 
 // ── Identity / Skills control ─────────────────────────────────────────────────
-const fs = require("fs");
-const path = require("path");
 
 const IDENTITY_FILE = path.join(__dirname, "../../data/cipher_identity.json");
 
