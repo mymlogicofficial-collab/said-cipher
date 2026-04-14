@@ -165,3 +165,23 @@ code.inline-code { background: var(--bg3); padding: 1px 5px; border-radius: 3px;
 .unavail-msg { font-size: 13px; color: var(--text-dim); max-width: 400px; }
 .unavail-sub { font-size: 12px; color: var(--text-dim); max-width: 420px; line-height: 1.6; }
 .unavail-sub code { background: var(--bg3); color: var(--green); padding: 2px 6px; border-radius: 3px; font-family: "Courier New", monospace; }
+
+/* ── Identity Panel ──────────────────────────────────────────────────────── */
+.identity-panel { padding: 16px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; height: 100%; }
+.identity-section h3 { color: #e05a5a; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; border-bottom: 1px solid #2a2a2a; padding-bottom: 6px; }
+.identity-section textarea, .identity-section input[type="text"] { width: 100%; background: #111; border: 1px solid #2a2a2a; color: #ccc; padding: 8px; border-radius: 4px; font-size: 0.85em; font-family: monospace; box-sizing: border-box; }
+.identity-section textarea { resize: vertical; }
+.identity-actions { margin-top: 8px; display: flex; align-items: center; }
+.skill-item { background: #111; border: 1px solid #2a2a2a; border-radius: 4px; padding: 10px; margin-bottom: 8px; }
+.skill-item.disabled { opacity: 0.45; }
+.skill-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.skill-name { color: #e05a5a; font-weight: bold; font-size: 0.85em; }
+.skill-preview { color: #666; font-size: 0.78em; font-family: monospace; }
+.skill-controls { display: flex; gap: 6px; }
+.memory-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #111; border: 1px solid #2a2a2a; border-radius: 4px; margin-bottom: 6px; font-size: 0.85em; color: #aaa; }
+.add-skill-form, .add-memory-form { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.add-memory-form { flex-direction: row; }
+.btn-primary { background: #e05a5a; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.82em; }
+.btn-primary:hover { background: #c44; }
+.btn-sm { background: #222; color: #aaa; border: 1px solid #333; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 0.75em; }
+.btn-danger { color: #e05a5a; border-color: #5a1a1a; }
