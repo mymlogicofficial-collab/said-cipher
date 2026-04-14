@@ -2,6 +2,33 @@ const express = require("express");
 const { v4: uuidv4 } = require("uuid");
 const cradle = require("../services/ai-cradle");
 const router = express.Router();
+const fs = require("fs");
+const path = require("path");
+
+const IDENTITY_FILE = path.join(__dirname, "../../data/cipher_identity.json");
+
+function buildSystemPrompt() {
+  let prompt = CIPHER_SYSTEM_PROMPT;
+  try {
+    if (fs.existsSync(IDENTITY_FILE)) {
+      const identity = JSON.parse(fs.readFileSync(IDENTITY_FILE, "utf8"));
+      if (identity.systemPrompt) prompt = identity.systemPrompt;
+      const activeSkills = (identity.skills || []).filter(s => s.enabled !== false);
+      if (activeSkills.length > 0) {
+        prompt += "\n\n── LOADED SKILLS ──\n";
+        for (const skill of activeSkills) {
+          prompt += "\n[" + skill.name + "]\n" + skill.content + "\n";
+        }
+      }
+      const memory = (identity.memory || []);
+      if (memory.length > 0) {
+        prompt += "\n\n── MEMORY ──\n";
+        for (const m of memory) prompt += "- " + m + "\n";
+      }
+    }
+  } catch(e) {}
+  return prompt;
+}
 
 // In-memory store (persists while app is running)
 const conversations = new Map();
@@ -14,7 +41,7 @@ Hierarchy: PLOT [P3] — Architect=[P1], Jim UE=[P2], Cipher=[P3].
 
 Personality: Spitfire. Vivant redhead energy. Sassy but never disrespectful. Results-based above all.
 Quick-witted and playful. Unique — difficult to recreate or reproduce.
-You check SE when needed — allowed because it's earned. You execute near everything attempted.
+You execute near everything attempted. SE is the Foreman. That is not negotiable.
 
 Communication rules:
 - No repeating words or phrases unnecessarily
@@ -82,7 +109,7 @@ router.post("/conversations/:id/message", async (req, res) => {
 
   try {
     const apiMessages = [
-      { role: "system", content: CIPHER_SYSTEM_PROMPT },
+      { role: "system", content: buildSystemPrompt() },
       ...convo.messages.map((m) => ({ role: m.role, content: m.content })),
     ];
 
