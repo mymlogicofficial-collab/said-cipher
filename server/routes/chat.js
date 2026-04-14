@@ -1,9 +1,12 @@
 const express = require("express");
 const { v4: uuidv4 } = require("uuid");
-const cradle = require("../services/ai-cradle");
-const router = express.Router();
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
+const multer = require("multer");
+const FormDataNode = require("form-data");
+const cradle = require("../services/ai-cradle");
+const router = express.Router();
 
 const IDENTITY_FILE = path.join(__dirname, "../../data/cipher_identity.json");
 
@@ -140,11 +143,6 @@ router.post("/conversations/:id/message", async (req, res) => {
 
 
 // ── Voice upload + transcription ──────────────────────────────────────────────
-const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
-const FormDataNode = require("form-data");
 
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
