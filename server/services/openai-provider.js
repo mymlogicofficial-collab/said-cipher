@@ -2,7 +2,6 @@
 // Uses OpenAI-compatible API via OpenRouter
 const OpenAI = require("openai");
 
-// Never cache client — always re-read key from env so .env loads correctly
 function getClient() {
   const key = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
   if (!key) return null;
@@ -16,7 +15,8 @@ function getClient() {
   });
 }
 
-const DEFAULT_MODEL = "google/gemma-3-12b-it:free";
+// Paid model — uses account credits, no free-tier rate limits
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || "google/gemma-3-12b-it";
 
 async function chat(messages, options = {}) {
   const c = getClient();
