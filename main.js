@@ -1,5 +1,28 @@
-// Load .env if present
-try { require("fs").readFileSync(require("path").join(__dirname, ".env"), "utf8").split("\n").forEach(l => { const [k,...v] = l.replace(/^#.*/, "").trim().split("="); if (k && v.length) process.env[k.trim()] = v.join("=").trim(); }); } catch(e) {}
+// Load .env — check __dirname first, then cwd
+(function loadEnv() {
+  const fs = require("fs");
+  const path = require("path");
+  const locations = [
+    path.join(__dirname, ".env"),
+    path.join(process.cwd(), ".env"),
+  ];
+  for (const loc of locations) {
+    try {
+      const lines = fs.readFileSync(loc, "utf8").split("\n");
+      lines.forEach(l => {
+        const clean = l.replace(/^#.*/, "").trim();
+        const idx = clean.indexOf("=");
+        if (idx > 0) {
+          const k = clean.slice(0, idx).trim();
+          const v = clean.slice(idx + 1).trim();
+          if (k && !process.env[k]) process.env[k] = v;
+        }
+      });
+      console.log("[ENV] Loaded from:", loc);
+      break;
+    } catch(e) {}
+  }
+})();
 
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
@@ -186,3 +209,4 @@ app.on("activate", () => {
     startMetrics();
   }
 });
+
