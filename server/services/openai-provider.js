@@ -2,22 +2,18 @@
 // Uses OpenAI-compatible API via OpenRouter
 const OpenAI = require("openai");
 
-let client = null;
-
+// Never cache client — always re-read key from env so .env loads correctly
 function getClient() {
-  if (!client) {
-    const key = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
-    if (!key) return null;
-    client = new OpenAI({
-      apiKey: key,
-      baseURL: "https://openrouter.ai/api/v1",
-      defaultHeaders: {
-        "HTTP-Referer": "https://mymlogic.com",
-        "X-Title": "S.A.I.D. Cipher",
-      },
-    });
-  }
-  return client;
+  const key = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  return new OpenAI({
+    apiKey: key,
+    baseURL: "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": "https://mymlogic.com",
+      "X-Title": "S.A.I.D. Cipher",
+    },
+  });
 }
 
 const DEFAULT_MODEL = "google/gemma-3-12b-it:free";
@@ -51,3 +47,4 @@ async function streamChat(messages, onChunk, options = {}) {
 }
 
 module.exports = { provider: { chat, streamChat } };
+
