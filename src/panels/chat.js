@@ -519,7 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Poll engine status every 8 seconds
   refreshEngineStatus();
-  setInterval(refreshEngineStatus, 8000);
+  setInterval(() => { if (!document.hidden) refreshEngineStatus(); }, 8000);
 
   loadConversationList();
 });
