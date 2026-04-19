@@ -43,9 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   sendBtn.addEventListener("click", sendMessage);
-  // Auto-focus input so Enter always works without clicking
-  chatInput.focus();
-  window.addEventListener("focus", () => chatInput.focus());
   newChatBtn.addEventListener("click", createConversation);
   attachBtn.addEventListener("click", () => fileAttach.click());
   fileAttach.addEventListener("change", handleFileSelect);
@@ -268,7 +265,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setCipherBusy(false);
     isProcessing = false;
     sendBtn.disabled = false;
-    chatInput.focus();
     chatInput.focus();
   }
 
