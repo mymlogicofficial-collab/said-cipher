@@ -14,7 +14,7 @@ function getConfig() {
 }
 
 // Low-level fetch — no external deps, uses Node built-ins only
-function ollamaRequest(path, body) {
+function ollamaRequest(path, body, timeoutMs = 90000) {
   return new Promise((resolve, reject) => {
     const cfg = getConfig();
     const payload = JSON.stringify(body);
@@ -35,6 +35,7 @@ function ollamaRequest(path, body) {
       }
     );
     req.on("error", (e) => reject(new Error("Ollama connection failed: " + e.message + " — is Ollama running? (ollama serve)")));
+    req.setTimeout(timeoutMs, () => { req.destroy(); reject(new Error("Ollama timeout after " + timeoutMs + "ms — model may be running on CPU only")); });
     req.write(payload);
     req.end();
   });
@@ -101,7 +102,11 @@ async function chat(messages, options = {}) {
     model,
     stream: false,
     messages: messages.map(m => ({ role: m.role, content: m.content })),
-  });
+    options: {
+      num_predict: options.num_predict || 512,
+      temperature: options.temperature || 0.7,
+    }
+  }, options.timeoutMs || 90000);
   if (result.error) throw new Error("Ollama error: " + result.error);
   return result.message?.content || "";
 }
