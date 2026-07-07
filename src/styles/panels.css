@@ -64,6 +64,29 @@ code.inline-code { background: var(--bg3); padding: 1px 5px; border-radius: 3px;
 .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity:0.4; } 40% { transform: scale(1); opacity:1; } }
 
+/* Drag and drop */
+.chat-messages.drag-over { background: var(--bg3); border: 2px dashed var(--green); }
+
+/* Generated media */
+.generated-audio, .generated-image { margin: 8px 0; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--bg3); }
+.generated-audio audio, .generated-image img { width: 100%; max-width: 100%; border-radius: 4px; display: block; }
+.file-info { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+/* Attachment media */
+.message-attachments { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.attachment-audio, .attachment-image { border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--bg3); }
+.attachment-audio audio, .attachment-image img { width: 100%; border-radius: 3px; }
+.attachment-badge { display: inline-block; background: var(--bg3); padding: 4px 8px; border-radius: 3px; font-size: 12px; color: var(--text-dim); }
+
+/* Icon buttons */
+.icon-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; font-size: 16px; padding: 6px 8px; border-radius: 4px; transition: all 0.15s; }
+.icon-btn:hover { color: var(--text); border-color: var(--green); }
+.icon-btn.recording { background: var(--red); color: white; border-color: var(--red); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.send { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--green); color: var(--bg); border-color: var(--green); }
+.send:hover { background: #4dd844; }
+.send:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .chat-input-bar { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--bg2); }
 .chat-controls { display: flex; gap: 4px; }
 #chat-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 4px; resize: none; font-family: inherit; font-size: 13px; line-height: 1.4; max-height: 120px; }
@@ -149,17 +172,7 @@ code.inline-code { background: var(--bg3); padding: 1px 5px; border-radius: 3px;
 .dl-btn:hover { text-decoration: underline; }
 
 /* Terminal unavailable state */
-.terminal-unavailable {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--text-dim);
-  text-align: center;
-  padding: 40px;
-}
+.terminal-unavailable { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-dim); text-align: center; padding: 40px; }
 .unavail-icon { font-size: 48px; opacity: 0.5; }
 .unavail-title { font-size: 16px; color: var(--yellow); font-weight: 600; letter-spacing: 1px; }
 .unavail-msg { font-size: 13px; color: var(--text-dim); max-width: 400px; }

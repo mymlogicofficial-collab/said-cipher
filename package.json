@@ -1,7 +1,7 @@
 {
   "name": "said-cipher",
   "version": "1.0.0",
-  "description": "S.A.I.D. Cipher \u2014 MYM Logic LLC",
+  "description": "S.A.I.D. Cipher — MYM Logic LLC",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -57,5 +57,11 @@
     "electron": "^29.0.0",
     "electron-builder": "^24.9.1",
     "electron-rebuild": "^3.2.9"
+  },
+  "allowScripts": {
+    "better-sqlite3@9.6.0": true,
+    "electron@29.4.6": true,
+    "lzma-native@8.0.6": true,
+    "node-pty@1.1.0": true
   }
 }

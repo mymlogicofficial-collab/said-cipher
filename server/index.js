@@ -6,6 +6,7 @@ const filesRouter  = require("./routes/files");
 const chatRouter   = require("./routes/chat");
 const systemRouter = require("./routes/system");
 const mediaRouter  = require("./routes/media");
+const { router: adminRouter } = require("./routes/admin");
 const cradle       = require("./services/ai-cradle");
 const { provider: openaiProvider }  = require("./services/openai-provider");
 const { provider: ollamaProvider, ping: ollamaPing, getConfig: ollamaConfig } = require("./services/ollama-provider");
@@ -38,6 +39,7 @@ function createServer(port = 9471) {
   app.use("/api/chat",   chatRouter);
   app.use("/api/system", systemRouter);
   app.use("/api/media",  mediaRouter);
+  app.use("/api/admin",  adminRouter);
 
   // ── Engine status endpoint ────────────────────────────────────────────────
   app.get("/api/engine/status", async (req, res) => {
@@ -46,7 +48,7 @@ function createServer(port = 9471) {
     res.json({
       activeProvider: cradle.getDefaultProvider(),
       ollama: { available: ollama.ok, host: cfg.host, port: cfg.port, model: cfg.model, models: ollama.models },
-      openai: { available: !!(process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY) },
+      openai: { available: !!(process.env.OPEN_ROUTER_API_KEY || process.env.OPENAI_API_KEY) },
     });
   });
 

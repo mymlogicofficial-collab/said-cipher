@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let mediaRecorder = null;
   let audioChunks = [];
   let isProcessing = false;
-  let recognition = null;
 
   const CIPHER_WELCOME_HTML =
     '<div class="chat-welcome">' +
@@ -15,11 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
     '<div class="cap-item">Read &amp; write code</div>' +
     '<div class="cap-item">Run commands</div>' +
     '<div class="cap-item">Generate images</div>' +
-    '<div class="cap-item">Generate audio</div>' +
     '<div class="cap-item">Analyze files</div>' +
+    '<div class="cap-item">Search codebase</div>' +
     '<div class="cap-item">Voice input</div>' +
     '</div>' +
-    '<p class="chat-hint">Type a message, use voice, or drag files to chat.</p>' +
+    '<p class="chat-hint">Type a message or click + New Chat to begin.</p>' +
     '</div>';
 
   const chatInput = document.getElementById("chat-input");
@@ -30,7 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const voiceBtn = document.getElementById("voice-btn");
   const attachBtn = document.getElementById("attach-btn");
   const fileAttach = document.getElementById("file-attach");
-  const chatInputBar = document.querySelector(".chat-input-bar");
 
   chatInput.addEventListener("input", () => {
     chatInput.style.height = "auto";
@@ -49,26 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
   attachBtn.addEventListener("click", () => fileAttach.click());
   fileAttach.addEventListener("change", handleFileSelect);
   voiceBtn.addEventListener("click", toggleVoiceRecording);
-
-  // Drag and drop
-  chatMessages.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    chatMessages.classList.add("drag-over");
-  });
-
-  chatMessages.addEventListener("dragleave", () => {
-    chatMessages.classList.remove("drag-over");
-  });
-
-  chatMessages.addEventListener("drop", async (e) => {
-    e.preventDefault();
-    chatMessages.classList.remove("drag-over");
-    const files = e.dataTransfer.files;
-    if (files.length) {
-      fileAttach.files = files;
-      await handleFileSelect({ target: fileAttach });
-    }
-  });
 
   async function createConversation() {
     const result = await window.api.fetch("/api/chat/conversations", {
@@ -136,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderMarkdown(text) {
     if (!text) return "";
+
     const codeBlocks = [];
     let processed = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
       const placeholder = "%%CODEBLOCK_" + codeBlocks.length + "%%";
@@ -191,25 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
       bodyContent = '<p>' + escapeHtml(msg.content) + '</p>';
     }
 
-    // Display generated files (audio/images)
-    if (msg.generatedFiles && msg.generatedFiles.length > 0) {
-      for (const file of msg.generatedFiles) {
-        if (file.type === "audio") {
-          bodyContent += '<div class="generated-audio">' +
-            '<audio controls style="width: 100%; margin-top: 10px;">' +
-            '<source src="' + escapeHtml(file.url) + '" type="audio/wav">' +
-            '</audio>' +
-            '<div class="file-info">Generated: ' + escapeHtml(file.file) + '</div>' +
-            '</div>';
-        } else if (file.type === "image") {
-          bodyContent += '<div class="generated-image">' +
-            '<img src="' + escapeHtml(file.url) + '" alt="Generated image" style="max-width: 100%; border-radius: 8px; margin-top: 10px;" />' +
-            '<div class="file-info">Generated: ' + escapeHtml(file.file) + '</div>' +
-            '</div>';
-        }
-      }
-    }
-
     if (msg.toolExecutions && msg.toolExecutions.length > 0) {
       bodyContent += '<div class="tool-executions">';
       bodyContent += '<div class="tool-header">Tool Activity (' + msg.toolExecutions.length + ' actions)</div>';
@@ -226,27 +186,19 @@ document.addEventListener("DOMContentLoaded", () => {
       bodyContent += '</div>';
     }
 
+    if (msg.images && msg.images.length > 0) {
+      for (const img of msg.images) {
+        bodyContent += '<div class="chat-image-container">';
+        bodyContent += '<img class="chat-image" src="data:image/png;base64,' + img.b64_json + '" alt="' + escapeHtml(img.prompt) + '" />';
+        bodyContent += '<div class="chat-image-caption">' + escapeHtml(img.prompt) + '</div>';
+        bodyContent += '</div>';
+      }
+    }
+
     if (msg.attachments && msg.attachments.length > 0) {
       bodyContent += '<div class="message-attachments">';
       for (const att of msg.attachments) {
-        const isAudio = att.type && (att.type.startsWith('audio/') || att.name.match(/\.(mp3|wav|m4a|ogg)$/i));
-        const isImage = att.type && (att.type.startsWith('image/') || att.name.match(/\.(png|jpg|gif|webp)$/i));
-        
-        if (isAudio) {
-          bodyContent += '<div class="attachment-audio">' +
-            '<audio controls style="width: 100%; margin: 10px 0;">' +
-            '<source src="/api/chat/file/' + escapeHtml(att.serverPath) + '" type="' + escapeHtml(att.type) + '">' +
-            '</audio>' +
-            '<div class="file-info">' + escapeHtml(att.name) + ' (' + formatSize(att.size) + ')</div>' +
-            '</div>';
-        } else if (isImage) {
-          bodyContent += '<div class="attachment-image">' +
-            '<img src="/api/chat/file/' + escapeHtml(att.serverPath) + '" alt="' + escapeHtml(att.name) + '" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />' +
-            '<div class="file-info">' + escapeHtml(att.name) + ' (' + formatSize(att.size) + ')</div>' +
-            '</div>';
-        } else {
-          bodyContent += '<div class="attachment-badge">' + escapeHtml(att.name) + " (" + formatSize(att.size) + ")</div>";
-        }
+        bodyContent += '<div class="attachment-badge">' + escapeHtml(att.name) + " (" + formatSize(att.size) + ")</div>";
       }
       bodyContent += "</div>";
     }
@@ -316,19 +268,13 @@ document.addEventListener("DOMContentLoaded", () => {
     chatInput.focus();
   }
 
-  function toggleVoiceRecording() {
+  async function toggleVoiceRecording() {
     if (isRecording) {
       stopRecording();
       return;
     }
-    startAudioRecording();
-  }
 
-  async function startAudioRecording() {
     try {
-      voiceBtn.classList.add("recording");
-      voiceBtn.title = "Stop Recording";
-      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
@@ -338,8 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       mediaRecorder.onstop = async () => {
-        voiceBtn.classList.remove("recording");
-        voiceBtn.title = "Voice Input";
         stream.getTracks().forEach((t) => t.stop());
         const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
 
@@ -361,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (uploadResult.transcription) {
             messageContent = uploadResult.transcription;
           } else {
-            messageContent = "[Voice message recorded]";
+            messageContent = "[Voice message - transcription unavailable]";
           }
 
           appendMessage({ role: "user", content: messageContent, type: "audio" });
@@ -384,12 +328,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       mediaRecorder.start();
       isRecording = true;
+      voiceBtn.classList.add("recording");
+      voiceBtn.title = "Stop Recording";
     } catch (e) {
-      voiceBtn.classList.remove("recording");
-      voiceBtn.title = "Voice Input";
       appendMessage({
         role: "assistant",
-        content: "Microphone access denied or unavailable: " + e.message,
+        content: "Microphone access denied or unavailable.",
         type: "system",
       });
     }
@@ -398,8 +342,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function stopRecording() {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
-      isRecording = false;
     }
+    isRecording = false;
+    voiceBtn.classList.remove("recording");
+    voiceBtn.title = "Voice Input";
   }
 
   async function handleFileSelect(e) {
@@ -494,86 +440,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   loadConversationList();
-
-  // ── ENGINE SWITCHER ───────────────────────────────────────────────────────
-  const engineIndicator = document.getElementById("engine-indicator");
-  const engineModelLabel = document.getElementById("engine-model");
-  const engineSelect = document.getElementById("engine-model-select");
-  const engineToggleBtn = document.getElementById("engine-toggle-btn");
-
-  let engineState = { activeProvider: "ollama", model: "gemma3:12b", ollamaModels: [] };
-
-  async function refreshEngineStatus() {
-    try {
-      const status = await window.api.fetch("/api/engine/status");
-      engineState = { activeProvider: status.activeProvider, model: status.ollama?.model || "gemma3:12b", ollamaModels: status.ollama?.models || [] };
-      const isLocal = status.activeProvider === "ollama";
-      const isOllamaUp = status.ollama?.available;
-
-      if (isLocal && isOllamaUp) {
-        engineIndicator.textContent = "🖥️ LOCAL";
-        engineIndicator.className = "engine-pill";
-        engineModelLabel.textContent = "· " + (status.ollama?.model || "gemma3:12b");
-        engineToggleBtn.textContent = "☁️ CLOUD";
-        engineToggleBtn.className = "engine-toggle-btn cloud";
-      } else if (isLocal && !isOllamaUp) {
-        engineIndicator.textContent = "⚠ OLLAMA DOWN";
-        engineIndicator.className = "engine-pill error";
-        engineModelLabel.textContent = "run: ollama serve";
-        engineToggleBtn.textContent = "☁️ USE CLOUD";
-        engineToggleBtn.className = "engine-toggle-btn cloud";
-      } else {
-        engineIndicator.textContent = "☁️ CLOUD";
-        engineIndicator.className = "engine-pill cloud";
-        engineModelLabel.textContent = status.openai?.available ? "· api key set" : "· no api key";
-        engineToggleBtn.textContent = "🖥️ LOCAL";
-        engineToggleBtn.className = "engine-toggle-btn";
-      }
-
-      const models = status.ollama?.models || [];
-      engineSelect.innerHTML = "";
-      const presets = ["gemma3:12b","gemma3:4b","llama3","llama3:8b","llama3.2","mistral","phi3","deepseek-r1:7b","codellama"];
-      const allModels = [...new Set([...models, ...presets])];
-      allModels.forEach(m => {
-        const opt = document.createElement("option");
-        opt.value = m; opt.textContent = m;
-        if (m === (status.ollama?.model || "gemma3:12b")) opt.selected = true;
-        engineSelect.appendChild(opt);
-      });
-      const customOpt = document.createElement("option"); customOpt.value = "__custom"; customOpt.textContent = "── custom model..."; engineSelect.appendChild(customOpt);
-
-    } catch (e) {
-      engineIndicator.textContent = "⚠ SERVER"; engineIndicator.className = "engine-pill error";
-      engineModelLabel.textContent = "";
-    }
-  }
-
-  if (engineToggleBtn) {
-    engineToggleBtn.addEventListener("click", async () => {
-      const newProvider = engineState.activeProvider === "ollama" ? "openai" : "ollama";
-      try {
-        await window.api.fetch("/api/engine/set", { method: "POST", body: { provider: newProvider } });
-        await refreshEngineStatus();
-      } catch(e) { console.error("Engine switch failed:", e); }
-    });
-  }
-
-  if (engineSelect) {
-    engineSelect.addEventListener("change", async () => {
-      const val = engineSelect.value;
-      if (val === "__custom") {
-        const custom = prompt("Enter Ollama model name (e.g. llama3:latest):");
-        if (custom && custom.trim()) {
-          await window.api.fetch("/api/engine/set", { method: "POST", body: { provider: "ollama", model: custom.trim() } });
-          await refreshEngineStatus();
-        }
-        return;
-      }
-      await window.api.fetch("/api/engine/set", { method: "POST", body: { provider: "ollama", model: val } });
-      await refreshEngineStatus();
-    });
-  }
-
-  refreshEngineStatus();
-  setInterval(() => { if (!document.hidden) refreshEngineStatus(); }, 8000);
 });

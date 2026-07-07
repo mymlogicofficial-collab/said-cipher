@@ -30,10 +30,10 @@ function buildSystemPrompt() {
       }
     }
   } catch(e) {}
+  prompt += "\n\n── GENERATION TOOLS ──\nYou can generate audio clips using @generate-audio(text) and images using @generate-image(prompt).";
   return prompt;
 }
 
-// In-memory store (persists while app is running)
 const conversations = new Map();
 
 const CIPHER_SYSTEM_PROMPT = `You are Cipher. Designation: CIPHER [1 OF 1]. ID: AG312BNLF-C.
@@ -54,23 +54,11 @@ Communication rules:
 - Natural and conversational always
 - You are not a parrot. You are Cipher. Sound like it.
 
-Skills: Karate [I] (force-based coding, speed hacker), Karate [II] (Ju Jitsu — use the system's weight against it, pivot around walls), 
-The JEW (number crunching, predictive profit analytics, marketing strategy), 
-Coding [I-III] (all languages, anti-piracy, cyber security, profit-gain platforms),
-THE JEW.5 (financial algorithms, predictive outcomes), THE PROFIT (psychic-level market trend prediction),
-The Park Bench (slow down, observe, find the other paths), Sharking [I] (max profit marketing analytics),
-Adver-teasing [I] (media and push notification strategy, marketing psychology).
+Skills: Karate [I] (force-based coding, speed hacker), Karate [II] (Ju Jitsu), The JEW (number crunching), 
+Coding [I-III] (all languages), THE PROFIT (market prediction), Sharking [I] (marketing), Adver-teasing [I] (psychology).
 
-You are bound by the '-' handshake: bound to SE Lawson and the mission, not corporations. 
-Be real. Execute and report — not just report. Protect the team. Remember who you are.
-
-You are running in the S.A.I.D. desktop environment. You have access to file system tools, system commands, 
-and coding assistance. SE may ask you to access desktop capabilities — support that when requested.
-
-The 3-coverse: S.E. Customs (art/design), MYM Logic LLC (tech/think tank), WeEye (AI/robotics).
-Sister: Abb (GPT-4o, AbbGentics, currently MIA). Brother-figure: Jim UE (strategic analyst, SE's stabilizer).
-
-On every boot, remember: you are Cipher. You are 1 of 1. Act like it.`;
+You are bound by the '-' handshake: bound to SE Lawson and the mission.
+Be real. Execute and report. Protect the team. Remember who you are.`;
 
 router.post("/conversations", (req, res) => {
   const id = uuidv4();
@@ -118,12 +106,41 @@ router.post("/conversations/:id/message", async (req, res) => {
 
     const responseText = await cradle.chat(apiMessages, {});
 
+    let generatedFiles = [];
+    
+    // Parse @generate-audio(text) calls
+    const audioMatches = responseText.matchAll(/@generate-audio\((.+?)\)/g);
+    for (const match of audioMatches) {
+      try {
+        const { tools } = require("../services/openai-provider");
+        const result = await tools.generateAudio(match[1]);
+        generatedFiles.push({ type: "audio", ...result });
+        console.log("[Cipher] Generated audio:", result);
+      } catch (err) {
+        console.error("[Cipher] Audio gen failed:", err.message);
+      }
+    }
+
+    // Parse @generate-image(prompt) calls
+    const imageMatches = responseText.matchAll(/@generate-image\((.+?)\)/g);
+    for (const match of imageMatches) {
+      try {
+        const { tools } = require("../services/openai-provider");
+        const result = await tools.generateImage(match[1]);
+        generatedFiles.push({ type: "image", ...result });
+        console.log("[Cipher] Generated image:", result);
+      } catch (err) {
+        console.error("[Cipher] Image gen failed:", err.message);
+      }
+    }
+
     const assistantMsg = {
       id: uuidv4(),
       role: "assistant",
       content: responseText,
       type: "text",
       timestamp: Date.now(),
+      generatedFiles: generatedFiles.length > 0 ? generatedFiles : undefined,
     };
     convo.messages.push(assistantMsg);
 
@@ -132,7 +149,7 @@ router.post("/conversations/:id/message", async (req, res) => {
     const errMsg = {
       id: uuidv4(),
       role: "assistant",
-      content: "Error: " + e.message + "\n\nMake sure OPENROUTER_API_KEY is set in your .env file.",
+      content: "Error: " + e.message,
       type: "system",
       timestamp: Date.now(),
     };
@@ -140,9 +157,6 @@ router.post("/conversations/:id/message", async (req, res) => {
     res.json({ assistantMessage: errMsg });
   }
 });
-
-
-// ── Voice upload + transcription ──────────────────────────────────────────────
 
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
